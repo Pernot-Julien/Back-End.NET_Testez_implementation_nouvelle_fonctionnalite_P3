@@ -1,26 +1,345 @@
-﻿using Xunit;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.Localization;
+using NSubstitute;
+using P3AddNewFunctionalityDotNetCore.Models;
+using P3AddNewFunctionalityDotNetCore.Models.Repositories;
+using P3AddNewFunctionalityDotNetCore.Models.Services;
+using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
     public class ProductServiceTests
     {
+        private readonly ProductService _productService;
+
+        public ProductServiceTests()
+        {
+            // Mock des dépendances du ProductService
+            var cart = Substitute.For<ICart>();
+            var productRepository = Substitute.For<IProductRepository>();
+            var orderRepository = Substitute.For<IOrderRepository>();
+            var localizer = Substitute.For<IStringLocalizer<ProductService>>();
+
+            // Mock du message utilisé par CheckProductModelErrors
+            localizer["MissingName"].Returns(new LocalizedString("MissingName", "Veuillez saisir un nom"));
+            localizer["MissingPrice"].Returns(new LocalizedString("MissingPrice", "Veuillez saisir un prix"));
+            localizer["PriceNotANumber"].Returns(new LocalizedString("PriceNotANumber", "Le prix doit être un nombre valide"));
+            localizer["PriceNotGreaterThanZero"].Returns(new LocalizedString("PriceNotGreaterThanZero", "Le prix doit être un nombre positif"));
+            localizer["MissingStock"].Returns(new LocalizedString("MissingStock", "Veuillez saisir une quantité"));
+            localizer["StockNotAnInteger"].Returns(new LocalizedString("StockNotAnInteger", "La quantité doit être un entier valide"));
+            localizer["StockNotGreaterThanZero"].Returns(new LocalizedString("StockNotGreaterThanZero", "La quantité doit être un entier positif"));
+
+            // Instanciation du ProductService avec les dépendances mockées
+            _productService = new ProductService(cart, productRepository, orderRepository, localizer);
+        }
+
         /// <summary>
         /// Take this test method as a template to write your test method.
         /// A test method must check if a definite method does its job:
         /// returns an expected value from a particular set of parameters
         /// </summary>
         [Fact]
-        public void ExampleMethod()
+        public void CheckProductModelErrors_ReturnsMissingName_WhenNameIsNull()
+
         {
             // Arrange
-
+            var product = new ProductViewModel
+            {
+                Name = null,
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "19.99"
+            };
             // Act
-
+            var errors = _productService.CheckProductModelErrors(product);
 
             // Assert
-            Assert.Equal(1, 1);
+            Assert.Contains("Veuillez saisir un nom", errors);
+        }
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingName_WhenNameIsWhiteSpace()
+
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = " ",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+
+            // Assert
+            Assert.Contains("Veuillez saisir un nom", errors);
         }
 
-        // TODO write test methods to ensure a correct coverage of all possibilities
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingName_WhenNameIsEmpty()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "19.99"
+            };
+
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+
+            // Assert
+            Assert.Contains("Veuillez saisir un nom", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingPrice_WhenPriceIsNull()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = null
+            };
+
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+
+            // Assert
+            Assert.Contains("Veuillez saisir un prix", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingPrice_WhenPriceIsWhiteSpace()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = " "
+            };
+
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+
+            // Assert
+            Assert.Contains("Veuillez saisir un prix", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingPrice_WhenPriceIsEmpty()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = ""
+            };
+
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+
+            // Assert
+            Assert.Contains("Veuillez saisir un prix", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsPriceNotANumber_WhenPriceIsNotANumber()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "abc"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("Le prix doit être un nombre valide", errors);
+
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsPriceNotGreaterThanZero_WhenPriceIsZero()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "0"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("Le prix doit être un nombre positif", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsPriceNotGreaterThanZero_WhenPriceIsNegative()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "-5"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("Le prix doit être un nombre positif", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingStock_WhenStockIsNull()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = null,
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("Veuillez saisir une quantité", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingStock_WhenStockIsWhiteSpace()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = " ",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("Veuillez saisir une quantité", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsMissingStock_WhenStockIsEmpty()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("Veuillez saisir une quantité", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsStockNotAnInteger_WhenStockIsNotAnInteger()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "not_a_number",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("La quantité doit être un entier valide", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsStockNotGreaterThanZero_WhenStockIsZero()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "0",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("La quantité doit être un entier positif", errors);
+
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsStockNotGreaterThanZero_WhenStockIsNegative()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "-5",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Contains("La quantité doit être un entier positif", errors);
+        }
+
+        [Fact]
+        public void CheckProductModelErrors_ReturnsNoErrors_WhenProductIsValid()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "19.99"
+            };
+            // Act
+            var errors = _productService.CheckProductModelErrors(product);
+            // Assert
+            Assert.Empty(errors);
+
+        }
+
     }
 }
