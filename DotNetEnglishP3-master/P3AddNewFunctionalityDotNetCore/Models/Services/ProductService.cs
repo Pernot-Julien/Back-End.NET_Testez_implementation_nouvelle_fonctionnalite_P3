@@ -136,7 +136,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             Product productEntity = new Product
             {
                 Name = product.Name,
-                Price = double.Parse(product.Price),
+                Price = double.Parse(product.Price, CultureInfo.InvariantCulture),
                 Quantity = Int32.Parse(product.Stock),
                 Description = product.Description,
                 Details = product.Details

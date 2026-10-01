@@ -2,9 +2,12 @@
 using Microsoft.Extensions.Localization;
 using NSubstitute;
 using P3AddNewFunctionalityDotNetCore.Models;
+using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using System.Globalization;
+using System.Xml.Linq;
 using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
@@ -12,6 +15,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
     public class ProductServiceTests
     {
         private readonly ProductService _productService;
+        private readonly IProductRepository _productRepository;
 
         public ProductServiceTests()
         {
@@ -20,6 +24,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var productRepository = Substitute.For<IProductRepository>();
             var orderRepository = Substitute.For<IOrderRepository>();
             var localizer = Substitute.For<IStringLocalizer<ProductService>>();
+            _productRepository = productRepository;
 
             // Mock du message utilisé par CheckProductModelErrors
             localizer["MissingName"].Returns(new LocalizedString("MissingName", "Veuillez saisir un nom"));
@@ -341,5 +346,31 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
         }
 
+        [Fact]
+        public void SaveProduct_CallsRepositoryWithValidProduct()
+        {
+            // Arrange
+            var product = new ProductViewModel
+            {
+                Name = "Valid Name",
+                Description = "Valid Description",
+                Details = "Valid Details",
+                Stock = "10",
+                Price = "19.99"
+            };
+            // Act
+            _productService.SaveProduct(product);
+            // Assert
+            _productRepository.Received(1).SaveProduct(
+                Arg.Is<Product>(
+                    p =>
+                    p.Name == product.Name &&
+                    p.Description == product.Description &&
+                    p.Details == product.Details &&
+                    p.Quantity == int.Parse(product.Stock) &&
+                    p.Price == double.Parse(product.Price, CultureInfo.InvariantCulture)
+                ) 
+             );
+        }
     }
 }
