@@ -6,6 +6,7 @@ using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
 using Xunit;
@@ -16,11 +17,12 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
     {
         private readonly ProductService _productService;
         private readonly IProductRepository _productRepository;
+        private readonly ICart _cart; 
 
         public ProductServiceTests()
         {
             // Mock des dépendances du ProductService
-            var cart = Substitute.For<ICart>();
+            _cart = Substitute.For<ICart>(); 
             var productRepository = Substitute.For<IProductRepository>();
             var orderRepository = Substitute.For<IOrderRepository>();
             var localizer = Substitute.For<IStringLocalizer<ProductService>>();
@@ -36,7 +38,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             localizer["StockNotGreaterThanZero"].Returns(new LocalizedString("StockNotGreaterThanZero", "La quantité doit être un entier positif"));
 
             // Instanciation du ProductService avec les dépendances mockées
-            _productService = new ProductService(cart, productRepository, orderRepository, localizer);
+            _productService = new ProductService(_cart, productRepository, orderRepository, localizer);
         }
 
         /// <summary>
@@ -372,5 +374,32 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 ) 
              );
         }
+
+        [Fact]
+        public void DeleteProduct_CallsRepositoryWithCorrectId()
+        {
+            // Arrange
+
+            int id = 5;
+
+            var product = new Product
+            {
+                Id = 5,
+                Name = "New Product",
+                Price = 10,
+                Quantity = 2,
+                Description = "Description",
+                Details = "Details"
+            };
+
+            _productRepository.GetAllProducts().Returns(new List<Product> { product });
+            // Act
+            _productService.DeleteProduct(id);
+            // Assert
+            _cart.Received(1).RemoveLine(product); 
+            _productRepository.Received(1).DeleteProduct(id);
+        }
+
+     
     }
 }
