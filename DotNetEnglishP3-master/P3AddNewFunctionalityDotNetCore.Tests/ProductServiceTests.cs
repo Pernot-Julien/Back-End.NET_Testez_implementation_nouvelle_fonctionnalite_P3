@@ -18,6 +18,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         private readonly ProductService _productService;
         private readonly IProductRepository _productRepository;
         private readonly ICart _cart; 
+        private readonly IOrderRepository _orderRepository;
+        private readonly IStringLocalizer<ProductService> _localizer;
 
         public ProductServiceTests()
         {
@@ -27,6 +29,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var orderRepository = Substitute.For<IOrderRepository>();
             var localizer = Substitute.For<IStringLocalizer<ProductService>>();
             _productRepository = productRepository;
+            _orderRepository = orderRepository;
+            _localizer = localizer;
 
             // Mock du message utilisé par CheckProductModelErrors
             localizer["MissingName"].Returns(new LocalizedString("MissingName", "Veuillez saisir un nom"));
@@ -400,6 +404,27 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _productRepository.Received(1).DeleteProduct(id);
         }
 
-     
+        [Fact]
+        public void UpdateProductQuantities_CallsRepositoryUpdateForEachProductInCart()
+        {
+            // Arrange
+            var product1 = new Product { Id = 1, Name = "Product 1", Quantity = 5 };
+            var product2 = new Product { Id = 2, Name = "Product 2", Quantity = 3 };
+
+            var cart = new Cart();
+            cart.AddItem(product1, 5);
+            cart.AddItem(product2, 7);
+
+
+            var productService = new ProductService(cart, _productRepository, _orderRepository, _localizer);
+
+            // Act
+            productService.UpdateProductQuantities();
+
+            // Assert
+            _productRepository.Received(1).UpdateProductStocks(1, 5);
+            _productRepository.Received(1).UpdateProductStocks(2, 7);
+        }
+
     }
 }
