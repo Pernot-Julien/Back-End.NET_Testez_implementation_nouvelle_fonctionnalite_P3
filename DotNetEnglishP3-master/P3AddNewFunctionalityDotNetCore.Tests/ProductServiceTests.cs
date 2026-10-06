@@ -8,6 +8,7 @@ using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Xml.Linq;
 using Xunit;
 
@@ -17,14 +18,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
     {
         private readonly ProductService _productService;
         private readonly IProductRepository _productRepository;
-        private readonly ICart _cart; 
+        private readonly ICart _cart;
         private readonly IOrderRepository _orderRepository;
         private readonly IStringLocalizer<ProductService> _localizer;
 
         public ProductServiceTests()
         {
             // Mock des dépendances du ProductService
-            _cart = Substitute.For<ICart>(); 
+            _cart = Substitute.For<ICart>();
             var productRepository = Substitute.For<IProductRepository>();
             var orderRepository = Substitute.For<IOrderRepository>();
             var localizer = Substitute.For<IStringLocalizer<ProductService>>();
@@ -375,7 +376,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                     p.Details == product.Details &&
                     p.Quantity == int.Parse(product.Stock) &&
                     p.Price == double.Parse(product.Price, CultureInfo.InvariantCulture)
-                ) 
+                )
              );
         }
 
@@ -400,7 +401,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Act
             _productService.DeleteProduct(id);
             // Assert
-            _cart.Received(1).RemoveLine(product); 
+            _cart.Received(1).RemoveLine(product);
             _productRepository.Received(1).DeleteProduct(id);
         }
 
@@ -426,5 +427,68 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _productRepository.Received(1).UpdateProductStocks(2, 7);
         }
 
+        [Fact]
+        public void SaveProduct_AddsProduct_VisibleInClientList()
+        {
+            // Arrange
+            var cart = Substitute.For<ICart>();
+            var productRepository = Substitute.For<IProductRepository>();
+            var orderRepository = Substitute.For<IOrderRepository>();
+            var localizer = Substitute.For<IStringLocalizer<ProductService>>();
+
+            var productService = new ProductService(
+                cart,
+                productRepository,
+                orderRepository,
+                localizer
+            );
+
+            var product = new Product
+            {
+                Name = "iPhone 18",
+                Quantity = 20,
+                Price = 1500
+            };
+
+            var listeProduits = new List<Product> { product };
+            productRepository.GetAllProducts().Returns(listeProduits);
+
+            var viewModel = new ProductViewModel
+            {
+                Name = "iPhone 18",
+                Stock = "20",
+                Price = "1500"
+            };
+
+            // Act
+            productService.SaveProduct(viewModel);
+            var produitsClient = productService.GetAllProducts();
+
+            // Assert
+            Assert.Contains(produitsClient, p =>
+                p.Name == "iPhone 18" &&
+                p.Quantity == 20 &&
+                p.Price == 1500);
+        }
+
+        [Fact]
+        public void Integration_DeleteProduct_ShouldDisappearFromClientList()
+        {
+            // Arrange
+            var cart = new Cart();
+            var productRepository = new _ProductRepository();
+            var orderRepository = new OrderRepository();
+            var service = new ProductService(cart, productRepository, orderRepository, _localizer);
+
+            var product = new Product { Id = 1, Name = "Test", Quantity = 5, Price = 10 };
+            productRepository.AddProduct(product);
+
+            // Act
+            service.DeleteProduct(1);
+            var products = productRepository.GetAllProducts();
+
+            // Assert
+            Assert.DoesNotContain(products, p => p.Id == 1);
+        }
     }
 }
