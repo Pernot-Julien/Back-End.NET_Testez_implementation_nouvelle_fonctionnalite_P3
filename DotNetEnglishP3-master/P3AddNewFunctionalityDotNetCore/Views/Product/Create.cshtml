@@ -5,24 +5,29 @@
 }
 
 <div asp-validation-summary="All" class="text-danger"></div>
-<form asp-action="Create" method="post">
-    <div class="mb-3 col-6">
-        <label>@Localizer["Name"]*:</label><input asp-for="Name" class="form-control" />
+    <div class="container d-flex justify-content-center">
+        <div> class="col-4"
+            <form asp-action="Create" method="post">
+                <div class="mb-3 col-12">
+                    <label>@Localizer["Name"]*:</label><input asp-for="Name" class="form-control" />
+                </div>
+                <div class="mb-3 col-12">
+                    <label>@Localizer["Price"]*:</label><input asp-for="Price" class="form-control" />
+                </div>
+                <div class="mb-3 col-12">
+                    <label>@Localizer["Description"]:</label><input asp-for="Description" class="form-control" />
+                </div>
+                <div class="mb-3 col-12">
+                    <label>@Localizer["Stock"]*:</label><input asp-for="Stock" type="text" class="form-control" />
+                </div>
+                <div class="mb-3 col-12">
+                    <label>@Localizer["Details"]:</label><input asp-for="Details" class="form-control" />
+                </div>
+                <div class="text-end">
+                    <input class="btn btn-primary" type="submit" value="@Localizer["OK"]" />
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="mb-3 col-4">
-        <label>@Localizer["Price"]*:</label><input asp-for="Price" class="form-control" />
-    </div>
-    <div class="mb-3 col-8">
-        <label>@Localizer["Description"]:</label><input asp-for="Description" class="form-control" />
-    </div>
-    <div class="mb-3 col-4">
-        <label>@Localizer["Stock"]*:</label><input asp-for="Stock" type="text" class="form-control" />
-    </div>
-    <div class="mb-3col-8">
-        <label>@Localizer["Details"]:</label><input asp-for="Details" class="form-control" />
-    </div>
-    <div class="text-center">
-        <input class="btn btn-primary" type="submit" value="@Localizer["OK"]" />
-    </div>
-</form>
+
 

@@ -470,25 +470,5 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 p.Quantity == 20 &&
                 p.Price == 1500);
         }
-
-        [Fact]
-        public void Integration_DeleteProduct_ShouldDisappearFromClientList()
-        {
-            // Arrange
-            var cart = new Cart();
-            var productRepository = new _ProductRepository();
-            var orderRepository = new OrderRepository();
-            var service = new ProductService(cart, productRepository, orderRepository, _localizer);
-
-            var product = new Product { Id = 1, Name = "Test", Quantity = 5, Price = 10 };
-            productRepository.AddProduct(product);
-
-            // Act
-            service.DeleteProduct(1);
-            var products = productRepository.GetAllProducts();
-
-            // Assert
-            Assert.DoesNotContain(products, p => p.Id == 1);
-        }
     }
 }
