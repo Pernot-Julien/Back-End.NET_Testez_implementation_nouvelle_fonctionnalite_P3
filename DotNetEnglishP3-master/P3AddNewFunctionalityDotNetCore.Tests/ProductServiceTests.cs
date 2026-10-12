@@ -1,6 +1,8 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Localization;
 using NSubstitute;
+using P3AddNewFunctionalityDotNetCore.Controllers;
 using P3AddNewFunctionalityDotNetCore.Models;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
@@ -8,8 +10,6 @@ using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Xml.Linq;
 using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
@@ -21,6 +21,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         private readonly ICart _cart;
         private readonly IOrderRepository _orderRepository;
         private readonly IStringLocalizer<ProductService> _localizer;
+        private readonly ProductController _productController;
+
 
         public ProductServiceTests()
         {
@@ -32,6 +34,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _productRepository = productRepository;
             _orderRepository = orderRepository;
             _localizer = localizer;
+            _productService = new ProductService(_cart, productRepository, orderRepository, localizer);
+            _productController = new ProductController(_productService, Substitute.For<ILanguageService>());
 
             // Mock du message utilisé par CheckProductModelErrors
             localizer["MissingName"].Returns(new LocalizedString("MissingName", "Veuillez saisir un nom"));
@@ -428,47 +432,34 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        public void SaveProduct_AddsProduct_VisibleInClientList()
+        public void Create_ValidProduct_AppearsInClientIndex()
+
         {
             // Arrange
-            var cart = Substitute.For<ICart>();
-            var productRepository = Substitute.For<IProductRepository>();
-            var orderRepository = Substitute.For<IOrderRepository>();
-            var localizer = Substitute.For<IStringLocalizer<ProductService>>();
-
-            var productService = new ProductService(
-                cart,
-                productRepository,
-                orderRepository,
-                localizer
-            );
-
-            var product = new Product
+            var productViewModel = new ProductViewModel
             {
-                Name = "iPhone 18",
-                Quantity = 20,
-                Price = 1500
+                Name = "Test Product",
+                Description = "This is a test product.",
+                Price = "100",
+                Stock = "50",
             };
 
-            var listeProduits = new List<Product> { product };
-            productRepository.GetAllProducts().Returns(listeProduits);
+            List<Product> products = new List<Product>();
 
-            var viewModel = new ProductViewModel
-            {
-                Name = "iPhone 18",
-                Stock = "20",
-                Price = "1500"
-            };
+            _productRepository.GetAllProducts().Returns(_ => products);
+
+            _productRepository
+             .When(repo => repo.SaveProduct(Arg.Any<Product>()))
+             .Do(call => products.Add(call.Arg<Product>()));
 
             // Act
-            productService.SaveProduct(viewModel);
-            var produitsClient = productService.GetAllProducts();
+            _productController.Create(productViewModel);
+            var result = _productController.Index();
 
             // Assert
-            Assert.Contains(produitsClient, p =>
-                p.Name == "iPhone 18" &&
-                p.Quantity == 20 &&
-                p.Price == 1500);
+            var view = Assert.IsType<ViewResult>(result);
+            var displayedProducts = Assert.IsAssignableFrom<IEnumerable<ProductViewModel>>(view.Model);
+            Assert.Contains(displayedProducts, p => p.Name == productViewModel.Name);
         }
     }
 }
