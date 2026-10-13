@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using P3AddNewFunctionalityDotNetCore.Controllers;
 using P3AddNewFunctionalityDotNetCore.Data;
@@ -46,19 +47,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         {
             // Arrange
             var testConnectionString = @"Server=localhost\SQLEXPRESS;Database=P3Referential_Test;Trusted_Connection=True;MultipleActiveResultSets=true";
-
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:P3Referential"] = testConnectionString
-                })
-                .Build();
-
-            var options = new DbContextOptionsBuilder<P3Referential>()
-                .UseSqlServer(testConnectionString)
-                .Options;
-
-            P3Referential P3Referential = new P3Referential(options, config);
+            P3Referential P3Referential = CreateTestContext(testConnectionString);
             P3Referential.Database.Migrate();
 
             ProductRepository productRepository = new ProductRepository(P3Referential);
@@ -78,7 +67,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             try
             {
                 var result = productController.Create(productViewModel);
-                using var verificationContext = new P3Referential(options, config);
+                using var verificationContext = CreateTestContext(testConnectionString);
                 var savedProduct = verificationContext.Set<Product>().FirstOrDefault(p => p.Name == productViewModel.Name);
                 // Assert  
                 Assert.NotNull(savedProduct);
@@ -89,7 +78,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             }
             finally
             {
-                using var cleanupContext = new P3Referential(options, config);
+                using var cleanupContext = CreateTestContext(testConnectionString);
                 var productToRemove = cleanupContext.Set<Product>().FirstOrDefault(p => p.Name == productViewModel.Name);
 
                 if (productToRemove != null)
@@ -106,20 +95,10 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Arrange
             var testConnectionString = @"Server=localhost\SQLEXPRESS;Database=P3Referential_Test;Trusted_Connection=True;MultipleActiveResultSets=true";
 
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:P3Referential"] = testConnectionString
-                })
-                .Build();
+         
 
-            var options = new DbContextOptionsBuilder<P3Referential>()
-                .UseSqlServer(testConnectionString)
-                .Options;
-
-            P3Referential P3Referential = new P3Referential(options, config);
+            P3Referential P3Referential = CreateTestContext(testConnectionString);
             P3Referential.Database.Migrate();
-
             ProductRepository productRepository = new ProductRepository(P3Referential);
             Cart cart = new Cart();
             OrderRepository orderRepository = new OrderRepository(P3Referential);
@@ -137,13 +116,13 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             try
             {
                 var result = productController.Create(productViewModel);
-                using var verificationContext = new P3Referential(options, config);
+                using var verificationContext = CreateTestContext(testConnectionString);
                 var savedProduct = verificationContext.Set<Product>().FirstOrDefault(p => p.Name == productViewModel.Name);
 
                 // Assert
                 Assert.NotNull(savedProduct);
                 var deleteResult = productController.DeleteProduct(savedProduct.Id);
-                P3Referential P3ReferentialDelete = new P3Referential(options, config);
+                P3Referential P3ReferentialDelete = CreateTestContext(testConnectionString);
                 Assert.DoesNotContain(P3ReferentialDelete.Set<Product>(), p => p.Id == savedProduct.Id);
                 var indexResult = productController.Index();
                 var viewResult = Assert.IsType<ViewResult>(indexResult);
@@ -152,7 +131,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             }
             finally
             {
-                using var cleanupContext = new P3Referential(options, config);
+                using var cleanupContext = CreateTestContext(testConnectionString);
                 var productToRemove = cleanupContext.Set<Product>().FirstOrDefault(p => p.Name == productViewModel.Name);
 
                 if (productToRemove != null)
@@ -161,6 +140,21 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                     cleanupContext.SaveChanges();
                 }
             }
+        }
+
+        private P3Referential CreateTestContext(string testConnectionString)
+        {
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:P3Referential"] = testConnectionString
+                })
+                .Build();
+            var options = new DbContextOptionsBuilder<P3Referential>()
+                .UseSqlServer(testConnectionString)
+                .Options;
+            var p3ReferentialTest = new P3Referential(options, config);
+            return p3ReferentialTest;
         }
     }
 }
