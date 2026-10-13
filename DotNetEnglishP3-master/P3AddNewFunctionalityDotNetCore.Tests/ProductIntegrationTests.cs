@@ -28,19 +28,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         private readonly IStringLocalizer<ProductService> _localizer;
 
 
-
-        public ProductIntegrationTests()
-        {
-            _productRepository = Substitute.For<IProductRepository>();
-            _languageService = Substitute.For<ILanguageService>();
-            _cart = Substitute.For<ICart>();
-            _orderRepository = Substitute.For<IOrderRepository>();
-            _localizer = Substitute.For<IStringLocalizer<ProductService>>();
-            _productService = new ProductService(_cart, _productRepository, _orderRepository, _localizer);
-            _productController = new ProductController(_productService, _languageService);
-
-        }
-
         [Fact]
         public void Create_ValidProduct_PersistsInDatabase_VisibleInClientList()
 
@@ -88,6 +75,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 }
             }
         }
+
         [Fact]
         public void Remove_ExistingProduct_RemovesFromDatabaseAndClientList()
 
