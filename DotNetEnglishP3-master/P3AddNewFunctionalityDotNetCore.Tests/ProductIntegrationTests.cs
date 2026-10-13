@@ -154,6 +154,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 .UseSqlServer(testConnectionString)
                 .Options;
             var p3ReferentialTest = new P3Referential(options, config);
+
             return p3ReferentialTest;
         }
     }
