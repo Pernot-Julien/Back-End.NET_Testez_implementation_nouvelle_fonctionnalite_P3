@@ -91,6 +91,30 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
         }
 
         // TODO this is an example method, remove it and perform model validation using data annotations
+        public List<string> CheckProductModelErrors(ProductViewModel product)
+        {
+            var errors = new List<string>();
+
+            if (!decimal.TryParse(product.Price, NumberStyles.Number, CultureInfo.InvariantCulture, out var price))
+            {
+                errors.Add("PriceNotANumber");
+            }
+            else if (price <= 0)
+            {
+                errors.Add("PriceNotGreaterThanZero");
+            }
+
+            if (!int.TryParse(product.Stock, out var stock))
+            {
+                errors.Add("StockNotAnInteger");
+            }
+            else if (stock <= 0)
+            {
+                errors.Add("StockNotGreaterThanZero");
+            }
+
+            return errors;
+        }
 
         public void SaveProduct(ProductViewModel product)
         {

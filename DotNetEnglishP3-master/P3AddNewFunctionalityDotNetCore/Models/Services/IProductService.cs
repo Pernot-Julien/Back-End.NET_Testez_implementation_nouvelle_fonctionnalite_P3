@@ -16,5 +16,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
         void DeleteProduct(int id);
         Task<Product> GetProduct(int id);
         Task<IList<Product>> GetProduct();
+        List<string> CheckProductModelErrors(ProductViewModel product);
     }
 }
+

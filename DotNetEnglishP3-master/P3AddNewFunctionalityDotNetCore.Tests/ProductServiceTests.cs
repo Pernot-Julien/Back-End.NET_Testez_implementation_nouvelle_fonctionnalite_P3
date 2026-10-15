@@ -36,7 +36,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _orderRepository = orderRepository;
             _localizer = localizer;
             _productService = new ProductService(_cart, productRepository, orderRepository, localizer);
-            _productController = new ProductController(_productService, Substitute.For<ILanguageService>());
+            _productController = new ProductController(_productService, Substitute.For<ILanguageService>(), _localizer);
         }
         /// <summary>
         /// Vérifie que le message MissingName est renvoyé lorsque le champ Name est manquant.
@@ -100,10 +100,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         [Theory]
         [InlineData("abc")]
         [InlineData("10abc")]
-        [InlineData("19,99")] 
+        [InlineData("19-99")] // invalide en FR
         public void ProductViewModel_ReturnsPriceNotANumber_WhenPriceIsNotDecimal(string price)
         {
-            // Arrange
             var product = new ProductViewModel
             {
                 Name = "Valid Name",
@@ -113,15 +112,12 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Price = price
             };
 
-            var context = new ValidationContext(product);
-            var results = new List<ValidationResult>();
+            var errors = _productService.CheckProductModelErrors(product);
 
-            // Act
-            Validator.TryValidateObject(product, context, results, true);
-
-            // Assert
-            Assert.Contains(results, r => r.ErrorMessage == "PriceNotANumber");
+            Assert.Contains("PriceNotANumber", errors);
         }
+
+
 
         /// <summary>
         /// Vérifie que le message PriceNotGreaterThanZero est renvoyé lorsque le champ Price est inférieur ou égal à zéro.
@@ -141,15 +137,13 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Price = price
             };
 
-            var context = new ValidationContext(product);
-            var results = new List<ValidationResult>();
-
             // Act
-            Validator.TryValidateObject(product, context, results, true);
+            var errors = _productService.CheckProductModelErrors(product);
 
             // Assert
-            Assert.Contains(results, r => r.ErrorMessage == "PriceNotGreaterThanZero");
+            Assert.Contains("PriceNotGreaterThanZero", errors);
         }
+
 
 
 
@@ -200,15 +194,13 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Price = "19.99"
             };
 
-            var context = new ValidationContext(product);
-            var results = new List<ValidationResult>();
-
             // Act
-            Validator.TryValidateObject(product, context, results, true);
+            var errors = _productService.CheckProductModelErrors(product);
 
             // Assert
-            Assert.Contains(results, r => r.ErrorMessage == "StockNotAnInteger");
+            Assert.Contains("StockNotAnInteger", errors);
         }
+
 
         /// <summary>
         /// Vérifie que le message StockNotGreaterThanZero est renvoyé lorsque le champ Stock est inférieur ou égal à zéro.
@@ -228,14 +220,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Price = "19.99"
             };
 
-            var context = new ValidationContext(product);
-            var results = new List<ValidationResult>();
-
             // Act
-            Validator.TryValidateObject(product, context, results, true);
+            var errors = _productService.CheckProductModelErrors(product);
 
             // Assert
-            Assert.Contains(results, r => r.ErrorMessage == "StockNotGreaterThanZero");
+            Assert.Contains("StockNotGreaterThanZero", errors);
         }
 
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using System.Collections.Generic;
@@ -11,11 +12,14 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
     {
         private readonly IProductService _productService;
         private readonly ILanguageService _languageService;
+        private readonly IStringLocalizer<ProductService> _localizer;
 
-        public ProductController(IProductService productService, ILanguageService languageService)
+
+        public ProductController(IProductService productService, ILanguageService languageService, IStringLocalizer<ProductService> localizer)
         {
             _productService = productService;
             _languageService = languageService;
+            _localizer = localizer;
         }
 
         public IActionResult Index()
@@ -40,13 +44,37 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
         [HttpPost]
         public IActionResult Create(ProductViewModel product)
         {
+            // Required
             if (!ModelState.IsValid)
             {
                 return View(product);
             }
 
+            // Validation métier
+            var errors = _productService.CheckProductModelErrors(product);
+
+            if (errors.Any())
+            {
+                foreach (var error in errors)
+                {
+                    if (error.Contains("Price"))
+                    {
+                        ModelState.AddModelError(nameof(product.Price), _localizer[error]);
+                    }
+
+                    if (error.Contains("Stock"))
+                    {
+                        ModelState.AddModelError(nameof(product.Stock), _localizer[error]);
+                    }
+                }
+
+                return View(product);
+            }
+
+            // Save
             _productService.SaveProduct(product);
-            return RedirectToAction("Admin");
+
+            return RedirectToAction("Index");
         }
 
         [Authorize]

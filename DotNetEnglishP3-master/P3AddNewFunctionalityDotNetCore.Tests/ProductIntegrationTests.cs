@@ -43,7 +43,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             ProductService productService = new ProductService(cart, productRepository, orderRepository, _localizer);
 
             // Act
-            ProductController productController = new ProductController(productService, _languageService);
+            ProductController productController = new ProductController(productService, _languageService, _localizer);
             ProductViewModel productViewModel = new ProductViewModel
             {
                 Name = "MacBook Pro",
@@ -93,7 +93,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             ProductService productService = new ProductService(cart, productRepository, orderRepository, _localizer);
 
             // Act
-            ProductController productController = new ProductController(productService, _languageService);
+            ProductController productController = new ProductController(productService, _languageService, _localizer);
             ProductViewModel productViewModel = new ProductViewModel
             {
                 Name = "MacBook Air 512go",

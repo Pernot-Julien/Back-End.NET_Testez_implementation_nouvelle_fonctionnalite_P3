@@ -16,10 +16,10 @@ namespace P3AddNewFunctionalityDotNetCore.Models.ViewModels
 
         public string Details { get; set; }
         [Required(ErrorMessage = "MissingStock")]
-        [StockValidation]
+
         public string Stock { get; set; }
         [Required(ErrorMessage = "MissingPrice")]
-        [PriceValidation]
+  
         public string Price { get; set; }
     }
 }
